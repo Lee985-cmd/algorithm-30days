@@ -5,8 +5,9 @@
 > **⭐ 如果对你有帮助，请给个 Star！**
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Stars](https://img.shields.io/github/stars/你的用户名/algorithm-30days.svg)](https://github.com/你的用户名/algorithm-30days/stargazers)
-[![Issues](https://img.shields.io/github/issues/你的用户名/algorithm-30days.svg)](https://github.com/你的用户名/algorithm-30days/issues)
+[![Stars](https://img.shields.io/github/stars/Lee985-cmd/algorithm-30days.svg)](https://github.com/Lee985-cmd/algorithm-30days/stargazers)
+[![Issues](https://img.shields.io/github/issues/Lee985-cmd/algorithm-30days.svg)](https://github.com/Lee985-cmd/algorithm-30days/issues)
+[![Forks](https://img.shields.io/github/forks/Lee985-cmd/algorithm-30days.svg)](https://github.com/Lee985-cmd/algorithm-30days/network/members)
 
 ---
 
@@ -21,6 +22,13 @@
 ```
 
 **如果有以上任何一条，这个项目就是为你准备的！**
+
+**🎯 已完成内容：**
+- ✅ 30天完整教程（约10万字）
+- ✅ 120+配套资源（练习题、答案、思维导图、检查清单）
+- ✅ 所有算法的JavaScript实现
+- ✅ 费曼学习法 + 游戏化学习
+- ✅ 从0到LeetCode实战
 
 ---
 
