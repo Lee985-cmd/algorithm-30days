@@ -1,381 +1,418 @@
 /**
- * Trie树（前缀树/字典树）
+ * Trie树（前缀树/字典树）- 高效字符串检索数据结构
  * 
- * 什么是Trie树？
- * Trie是一种多叉树结构，用于高效地存储和检索字符串数据集中的键
- * 
- * 特点：
- * 1. 根节点不包含字符
- * 2. 每条边代表一个字符
- * 3. 从根到某个节点的路径上的字符连接起来，就是该节点对应的字符串
- * 4. 每个节点的所有子节点包含的字符都不相同
- * 
- * 时间复杂度：
- * - 插入：O(m)，m是字符串长度
- * - 搜索：O(m)
- * - 前缀搜索：O(m)
- * 
- * 空间复杂度：O(n*m)，n是字符串数量，m是平均长度
- * 
- * 优点：
- * - 前缀匹配非常快
- * - 可以自动排序
- * - 没有哈希冲突
- * 
- * 缺点：
- * - 空间消耗较大
- * - 如果字符串很少共同前缀，空间利用率低
+ * 核心思想：
+ * - 用树形结构存储字符串集合
+ * - 共享公共前缀，节省空间
+ * - 每个节点代表一个字符
  * 
  * 应用场景：
- * - 自动补全
+ * - 搜索引擎的自动补全
  * - 拼写检查
- * - IP路由（最长前缀匹配）
- * - 词频统计
+ * - IP路由表查找
+ * - 敏感词过滤
+ * 
+ * 为什么不用哈希表？
+ * - 哈希表只能精确匹配
+ * - Trie支持前缀查询（"app"能查到"apple", "application"）
+ * 
+ * 时间复杂度：
+ * - 插入：O(m)，m为字符串长度
+ * - 搜索：O(m)
+ * - 前缀查询：O(m)
  */
 
-/**
- * Trie节点类
- */
 class TrieNode {
     constructor() {
-        this.children = new Map();  // 子节点映射
-        this.isEndOfWord = false;   // 是否是一个单词的结尾
+        // 子节点映射：字符 -> TrieNode
+        this.children = {};
+        // 标记是否为某个单词的结尾
+        this.isEndOfWord = false;
+        // 可选：记录以该节点为前缀的单词数量
+        this.wordCount = 0;
     }
 }
 
-/**
- * Trie树类
- */
 class Trie {
     constructor() {
         this.root = new TrieNode();
+        this.size = 0; // 单词总数
     }
-    
+
     /**
-     * 插入单词
-     * 时间复杂度：O(m)，m是单词长度
-     * @param {string} word
+     * 插入单词到Trie树
+     * 
+     * 算法流程：
+     * 1. 从根节点开始
+     * 2. 逐字符遍历单词
+     * 3. 如果字符不存在，创建新节点
+     * 4. 移动到下一个节点
+     * 5. 最后一个字符标记为单词结尾
+     * 
+     * @param {string} word - 要插入的单词
      */
     insert(word) {
+        if (!word || word.length === 0) return;
+
         let node = this.root;
-        
+
         for (let char of word) {
-            // 如果字符不存在，创建新节点
-            if (!node.children.has(char)) {
-                node.children.set(char, new TrieNode());
+            // 如果该字符的子节点不存在，创建它
+            if (!node.children[char]) {
+                node.children[char] = new TrieNode();
             }
-            node = node.children.get(char);
+            
+            // 移动到子节点
+            node = node.children[char];
+            // 更新前缀计数
+            node.wordCount++;
         }
-        
+
         // 标记单词结尾
-        node.isEndOfWord = true;
+        if (!node.isEndOfWord) {
+            node.isEndOfWord = true;
+            this.size++;
+        }
     }
-    
+
     /**
-     * 搜索单词
-     * 时间复杂度：O(m)
-     * @param {string} word
-     * @returns {boolean}
+     * 搜索完整单词
+     * 
+     * @param {string} word - 要搜索的单词
+     * @returns {boolean} 是否存在该单词
      */
     search(word) {
         const node = this._searchPrefix(word);
         return node !== null && node.isEndOfWord;
     }
-    
+
     /**
      * 检查是否有以prefix为前缀的单词
-     * 时间复杂度：O(m)
-     * @param {string} prefix
-     * @returns {boolean}
+     * 
+     * @param {string} prefix - 前缀
+     * @returns {boolean} 是否存在该前缀
      */
     startsWith(prefix) {
         return this._searchPrefix(prefix) !== null;
     }
-    
-    /**
-     * 搜索前缀，返回最后一个节点
-     * @private
-     * @param {string} prefix
-     * @returns {TrieNode|null}
-     */
-    _searchPrefix(prefix) {
-        let node = this.root;
-        
-        for (let char of prefix) {
-            if (!node.children.has(char)) {
-                return null;
-            }
-            node = node.children.get(char);
-        }
-        
-        return node;
-    }
-    
+
     /**
      * 删除单词
-     * 时间复杂度：O(m)
-     * @param {string} word
-     * @returns {boolean}
+     * 
+     * 注意：只删除标记，不删除节点（除非该节点没有其他用途）
+     * 
+     * @param {string} word - 要删除的单词
+     * @returns {boolean} 是否删除成功
      */
     delete(word) {
         return this._delete(this.root, word, 0);
     }
-    
+
     /**
-     * 递归删除
-     * @private
+     * 获取所有以prefix开头的单词
+     * 
+     * @param {string} prefix - 前缀
+     * @param {number} maxResults - 最大返回数量（默认10）
+     * @returns {Array} 匹配的单词数组
      */
-    _delete(node, word, depth) {
-        if (!node) {
-            return false;
-        }
-        
-        // 到达单词末尾
-        if (depth === word.length) {
-            if (!node.isEndOfWord) {
-                return false; // 单词不存在
+    getWordsWithPrefix(prefix, maxResults = 10) {
+        const node = this._searchPrefix(prefix);
+        if (!node) return [];
+
+        const results = [];
+        this._collectWords(node, prefix, results, maxResults);
+        return results;
+    }
+
+    /**
+     * 统计以prefix为前缀的单词数量
+     * 
+     * @param {string} prefix - 前缀
+     * @returns {number} 单词数量
+     */
+    countWordsWithPrefix(prefix) {
+        const node = this._searchPrefix(prefix);
+        return node ? node.wordCount : 0;
+    }
+
+    /**
+     * 内部方法：搜索前缀
+     * 
+     * @param {string} prefix - 前缀
+     * @returns {TrieNode|null} 前缀对应的节点，不存在返回null
+     */
+    _searchPrefix(prefix) {
+        let node = this.root;
+
+        for (let char of prefix) {
+            if (!node.children[char]) {
+                return null; // 前缀不存在
             }
-            
+            node = node.children[char];
+        }
+
+        return node;
+    }
+
+    /**
+     * 内部方法：递归删除
+     * 
+     * @param {TrieNode} node - 当前节点
+     * @param {string} word - 要删除的单词
+     * @param {number} index - 当前字符索引
+     * @returns {boolean} 是否可以删除当前节点
+     */
+    _delete(node, word, index) {
+        if (index === word.length) {
+            // 到达单词末尾
+            if (!node.isEndOfWord) return false; // 单词不存在
+
             node.isEndOfWord = false;
+            this.size--;
             
-            // 如果节点没有子节点，可以删除
-            return node.children.size === 0;
+            // 如果没有子节点，可以删除
+            return Object.keys(node.children).length === 0;
         }
-        
-        const char = word[depth];
-        const child = node.children.get(char);
-        
-        if (!child) {
-            return false; // 单词不存在
-        }
-        
-        // 递归删除
-        const shouldDeleteChild = this._delete(child, word, depth + 1);
-        
-        // 如果子节点应该被删除
+
+        const char = word[index];
+        const childNode = node.children[char];
+
+        if (!childNode) return false; // 单词不存在
+
+        // 递归删除子节点
+        const shouldDeleteChild = this._delete(childNode, word, index + 1);
+
+        // 如果子节点可以删除
         if (shouldDeleteChild) {
-            node.children.delete(char);
+            delete node.children[char];
+            node.wordCount--;
             
-            // 如果当前节点不是单词结尾且没有子节点，也应该删除
-            return !node.isEndOfWord && node.children.size === 0;
+            // 如果当前节点也不是单词结尾且没有其他子节点，可以删除
+            return !node.isEndOfWord && Object.keys(node.children).length === 0;
         }
-        
+
         return false;
     }
-    
+
     /**
-     * 获取所有以prefix为前缀的单词
-     * @param {string} prefix
-     * @returns {string[]}
+     * 内部方法：收集所有单词
+     * 
+     * @param {TrieNode} node - 当前节点
+     * @param {string} prefix - 当前前缀
+     * @param {Array} results - 结果数组
+     * @param {number} maxResults - 最大结果数
      */
-    getWordsWithPrefix(prefix) {
-        const node = this._searchPrefix(prefix);
-        if (!node) {
-            return [];
-        }
-        
-        const words = [];
-        this._collectWords(node, prefix, words);
-        return words;
-    }
-    
-    /**
-     * 收集所有单词
-     * @private
-     */
-    _collectWords(node, prefix, words) {
+    _collectWords(node, prefix, results, maxResults) {
+        if (results.length >= maxResults) return;
+
+        // 如果当前节点是单词结尾，加入结果
         if (node.isEndOfWord) {
-            words.push(prefix);
+            results.push(prefix);
         }
-        
-        for (let [char, child] of node.children) {
-            this._collectWords(child, prefix + char, words);
+
+        // 递归收集子节点的单词
+        for (let char in node.children) {
+            this._collectWords(node.children[char], prefix + char, results, maxResults);
+            if (results.length >= maxResults) break;
         }
     }
-    
+
     /**
-     * 判断Trie是否为空
-     * @returns {boolean}
+     * 获取Trie树中的单词总数
+     * 
+     * @returns {number} 单词数量
      */
-    isEmpty() {
-        return this.root.children.size === 0;
+    getSize() {
+        return this.size;
+    }
+
+    /**
+     * 清空Trie树
+     */
+    clear() {
+        this.root = new TrieNode();
+        this.size = 0;
     }
 }
 
-/**
- * 应用1：实现自动补全
- */
-class AutoComplete {
-    constructor() {
-        this.trie = new Trie();
-        this.frequency = new Map(); // 记录词频
-    }
-    
-    /**
-     * 添加单词
-     * @param {string} word
-     * @param {number} freq - 词频
-     */
-    addWord(word, freq = 1) {
-        this.trie.insert(word);
-        this.frequency.set(word, (this.frequency.get(word) || 0) + freq);
-    }
-    
-    /**
-     * 获取建议（按词频排序）
-     * @param {string} prefix
-     * @param {number} limit - 返回数量
-     * @returns {string[]}
-     */
-    getSuggestions(prefix, limit = 5) {
-        const words = this.trie.getWordsWithPrefix(prefix);
-        
-        // 按词频排序
-        words.sort((a, b) => {
-            return (this.frequency.get(b) || 0) - (this.frequency.get(a) || 0);
-        });
-        
-        return words.slice(0, limit);
-    }
-}
+// ==================== 测试示例 ====================
 
-/**
- * 应用2：单词替换
- * 
- * 问题：用词典中的最短前缀替换句子中的单词
- * 
- * @param {string[]} dictionary - 词典
- * @param {string} sentence - 句子
- * @returns {string}
- */
-function replaceWords(dictionary, sentence) {
-    const trie = new Trie();
-    
-    // 将词典插入Trie
-    for (let word of dictionary) {
-        trie.insert(word);
-    }
-    
-    // 分割句子
-    const words = sentence.split(' ');
-    
-    // 替换每个单词
-    const result = words.map(word => {
-        // 查找最短前缀
-        let node = trie.root;
-        let prefix = '';
-        
-        for (let char of word) {
-            if (!node.children.has(char)) {
-                break;
-            }
-            prefix += char;
-            node = node.children.get(char);
-            
-            // 如果找到一个完整的前缀，立即返回
-            if (node.isEndOfWord) {
-                return prefix;
-            }
-        }
-        
-        return word; // 没有找到前缀，返回原词
-    });
-    
-    return result.join(' ');
-}
+console.log('===== Trie树（前缀树）测试 =====\n');
 
-// ==================== 测试代码 ====================
-
-console.log('===== Trie基本操作测试 =====\n');
-
+// 测试1：基本操作
+console.log('测试1：插入和搜索');
 const trie = new Trie();
 
-console.log('插入单词: apple, app, application, apply, banana');
 trie.insert('apple');
 trie.insert('app');
 trie.insert('application');
 trie.insert('apply');
 trie.insert('banana');
+trie.insert('band');
+trie.insert('bank');
+
+console.log('插入单词: apple, app, application, apply, banana, band, bank');
+console.log('搜索 "apple":', trie.search('apple'));     // true
+console.log('搜索 "app":', trie.search('app'));         // true
+console.log('搜索 "appl":', trie.search('appl'));       // false（不是完整单词）
+console.log('搜索 "orange":', trie.search('orange'));   // false
+console.log('单词总数:', trie.getSize());
 console.log();
 
-console.log('搜索测试:');
-console.log('  "apple":', trie.search('apple'));     // true
-console.log('  "app":', trie.search('app'));         // true
-console.log('  "appl":', trie.search('appl'));       // false
-console.log('  "bananas":', trie.search('bananas')); // false
+// 测试2：前缀查询
+console.log('测试2：前缀查询');
+console.log('是否有 "app" 前缀:', trie.startsWith('app'));      // true
+console.log('是否有 "ban" 前缀:', trie.startsWith('ban'));      // true
+console.log('是否有 "ora" 前缀:', trie.startsWith('ora'));      // false
 console.log();
 
-console.log('前缀测试:');
-console.log('  "app":', trie.startsWith('app'));     // true
-console.log('  "ban":', trie.startsWith('ban'));     // true
-console.log('  "cat":', trie.startsWith('cat'));     // false
+// 测试3：自动补全（获取所有以某前缀开头的单词）
+console.log('测试3：自动补全功能');
+console.log('以 "app" 开头的单词:', trie.getWordsWithPrefix('app'));
+console.log('以 "ban" 开头的单词:', trie.getWordsWithPrefix('ban'));
+console.log('以 "ban" 开头的前2个单词:', trie.getWordsWithPrefix('ban', 2));
 console.log();
 
-console.log('获取以"app"为前缀的单词:');
-const words = trie.getWordsWithPrefix('app');
-console.log('  ', words);
+// 测试4：统计前缀数量
+console.log('测试4：统计前缀数量');
+console.log('以 "app" 为前缀的单词数:', trie.countWordsWithPrefix('app'));  // 4
+console.log('以 "ban" 为前缀的单词数:', trie.countWordsWithPrefix('ban'));  // 3
+console.log('以 "banan" 为前缀的单词数:', trie.countWordsWithPrefix('banan')); // 1
 console.log();
 
-console.log('删除单词"app":');
+// 测试5：删除操作
+console.log('测试5：删除单词');
+console.log('删除前搜索 "app":', trie.search('app'));  // true
 trie.delete('app');
-console.log('  "app":', trie.search('app'));         // false
-console.log('  "apple":', trie.search('apple'));     // true
+console.log('删除后搜索 "app":', trie.search('app'));  // false
+console.log('但 "apple" 还在:', trie.search('apple'));  // true
+console.log('以 "app" 为前缀的单词数:', trie.countWordsWithPrefix('app')); // 3
+console.log('单词总数:', trie.getSize());
 console.log();
 
-console.log('===== 自动补全测试 =====\n');
+// 测试6：实际应用场景 - 搜索引擎自动补全
+console.log('测试6：搜索引擎自动补全模拟');
+const searchTrie = new Trie();
 
-const autoComplete = new AutoComplete();
+// 模拟热门搜索词
+const hotSearches = [
+    'javascript教程',
+    'javascript框架',
+    'java面试题',
+    'java学习路线',
+    'python数据分析',
+    'python爬虫',
+    'react入门',
+    'react hooks',
+    'vue3新特性',
+    '算法导论'
+];
 
-// 添加单词和词频
-autoComplete.addWord('algorithm', 10);
-autoComplete.addWord('algebra', 5);
-autoComplete.addWord('alpha', 8);
-autoComplete.addWord('application', 15);
-autoComplete.addWord('apply', 12);
-autoComplete.addWord('banana', 7);
+hotSearches.forEach(word => searchTrie.insert(word));
 
-console.log('输入 "al" 的建议:');
-console.log('  ', autoComplete.getSuggestions('al', 3));
+console.log('用户输入 "java" 时的推荐:');
+console.log(searchTrie.getWordsWithPrefix('java', 5));
 
-console.log('\n输入 "app" 的建议:');
-console.log('  ', autoComplete.getSuggestions('app', 3));
+console.log('\n用户输入 "py" 时的推荐:');
+console.log(searchTrie.getWordsWithPrefix('py', 5));
+
+console.log('\n用户输入 "re" 时的推荐:');
+console.log(searchTrie.getWordsWithPrefix('re', 5));
 console.log();
 
-console.log('===== 单词替换测试 =====\n');
+// 测试7：敏感词过滤
+console.log('测试7：敏感词过滤应用');
+const sensitiveTrie = new Trie();
 
-const dict = ['cat', 'bat', 'rat'];
-const sentence = 'the cattle was rattled by the battery';
-console.log('词典:', dict);
-console.log('原句:', sentence);
-console.log('替换后:', replaceWords(dict, sentence));
-// 输出: "the cat was rat by the bat"
-console.log();
+// 添加敏感词
+const sensitiveWords = ['暴力', '色情', '赌博', '诈骗'];
+sensitiveWords.forEach(word => sensitiveTrie.insert(word));
 
-// 性能测试
-console.log('===== 性能测试 =====\n');
-
-function measureTime(operation, name) {
-    const start = Date.now();
-    operation();
-    const end = Date.now();
-    console.log(`${name}: ${end - start}ms`);
-}
-
-// 大量插入测试
-console.log('插入10000个单词:');
-measureTime(() => {
-    const perfTrie = new Trie();
-    for (let i = 0; i < 10000; i++) {
-        perfTrie.insert(`word${i}`);
+function filterSensitiveText(text, trie) {
+    let filtered = text;
+    for (let i = 0; i < text.length; i++) {
+        for (let j = i + 1; j <= text.length; j++) {
+            const substring = text.substring(i, j);
+            if (trie.search(substring)) {
+                // 替换为*号
+                filtered = filtered.replace(substring, '*'.repeat(substring.length));
+            }
+        }
     }
-}, '批量插入');
-
-// 导出类和函数
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = {
-        TrieNode,
-        Trie,
-        AutoComplete,
-        replaceWords
-    };
+    return filtered;
 }
+
+const testText = '这个网站有暴力和诈骗内容';
+console.log('原始文本:', testText);
+console.log('过滤后:', filterSensitiveText(testText, sensitiveTrie));
+console.log();
+
+// 测试8：性能测试
+console.log('测试8：性能测试');
+const perfTrie = new Trie();
+const words = [];
+
+// 插入10000个随机单词
+for (let i = 0; i < 10000; i++) {
+    const word = 'word' + Math.random().toString(36).substring(2, 8);
+    words.push(word);
+    perfTrie.insert(word);
+}
+
+console.log(`插入10000个单词完成`);
+console.log(`单词总数: ${perfTrie.getSize()}`);
+
+// 测试搜索性能
+const startTime = Date.now();
+let found = 0;
+for (let i = 0; i < 1000; i++) {
+    if (perfTrie.search(words[i])) {
+        found++;
+    }
+}
+const endTime = Date.now();
+
+console.log(`搜索1000次，找到${found}个，耗时: ${endTime - startTime}ms`);
+console.log(`平均每次搜索: ${(endTime - startTime) / 1000}ms`);
+console.log();
+
+// 测试9：IP路由表模拟
+console.log('测试9：IP路由表查找（简化版）');
+const ipTrie = new Trie();
+
+// 模拟IP前缀路由
+ipTrie.insert('192.168.1');  // 局域网
+ipTrie.insert('10.0.0');      // 内网
+ipTrie.insert('8.8.8');       // Google DNS
+ipTrie.insert('114.114.114'); // 114 DNS
+
+function lookupIP(ip, trie) {
+    const parts = ip.split('.');
+    for (let i = parts.length; i > 0; i--) {
+        const prefix = parts.slice(0, i).join('.');
+        if (trie.search(prefix)) {
+            return prefix;
+        }
+    }
+    return '未知路由';
+}
+
+console.log('192.168.1.100 的路由:', lookupIP('192.168.1.100', ipTrie));
+console.log('10.0.0.1 的路由:', lookupIP('10.0.0.1', ipTrie));
+console.log('8.8.8.8 的路由:', lookupIP('8.8.8.8', ipTrie));
+console.log('1.2.3.4 的路由:', lookupIP('1.2.3.4', ipTrie));
+console.log();
+
+console.log('===== Trie树特点总结 =====');
+console.log('✅ 前缀查询效率极高 O(m)');
+console.log('✅ 支持自动补全、拼写检查等应用');
+console.log('✅ 共享前缀，节省空间');
+console.log('⚠️  空间消耗较大（每个节点都有子节点映射）');
+console.log('⚠️  不适合存储大量短字符串');
+console.log('\n实际应用：');
+console.log('- 搜索引擎自动补全（Google、百度）');
+console.log('- IDE代码提示');
+console.log('- 浏览器URL自动补全');
+console.log('- IP路由表查找');
+console.log('- 敏感词过滤系统');
+console.log('- 拼写检查器');
