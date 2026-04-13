@@ -185,7 +185,20 @@
 2. 按顺序阅读
 3. 完成配套资源
 
-### 方式 2：克隆到本地
+### 方式 2：阅读深度技术文章
+
+我在掘金发布了系列深度解析文章，每篇1000+行：
+
+- 🔥 [A*算法：游戏AI寻路的"上帝视角"](https://juejin.cn/post/xxx) - 启发式搜索详解
+- 🔥 [Trie树：搜索引擎自动补全的秘密](https://juejin.cn/post/xxx) - 前缀匹配艺术
+- 🔥 [线段树：区间查询的终极武器](https://juejin.cn/post/xxx) - O(log n)高效统计
+- 🔥 [并查集：连通性问题的终极方案](https://juejin.cn/post/xxx) - 接近O(1)的神奇结构
+- 🔥 [红黑树：从入门到精通](https://juejin.cn/post/xxx) - 面试杀手征服指南
+- 🔥 [WebAssembly+算法实战](https://juejin.cn/post/xxx) - 前端性能提升10倍
+
+> 💡 **提示**：将 `xxx` 替换为你实际的掘金文章ID，或者先发布文章后再更新链接
+
+### 方式 3：克隆到本地
 
 ```bash
 # 克隆仓库
