@@ -405,9 +405,9 @@ git push origin feature/your-feature
 - **掘金专栏：** [你的掘金主页](https://juejin.cn/user/你的ID)
 - **GitHub：** [@你的用户名](https://github.com/你的用户名)
 - **邮箱：** your-email@example.com
-- **微信群：** 扫码加入学习群（见下方）
+- **公众号：** Lee 的成长日记（扫码关注，获取更多算法干货）
 
-![学习群二维码](./images/qrcode.png)
+![公众号二维码](./images/ewm.jpg)
 
 ---
 

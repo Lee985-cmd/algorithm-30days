@@ -423,6 +423,9 @@ git push origin feature/your-feature
 
 - **GitHub：** [@Lee985-cmd](https://github.com/Lee985-cmd)
 - **邮箱：** 376384019@qq.com
+- **公众号：** Lee 的成长日记（扫码关注，获取更多算法干货与学习心得）
+
+![公众号二维码](./images/ewm.jpg)
 
 ---
 
